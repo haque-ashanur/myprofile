@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} | {{ profile.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="nav">
+    <div class="brand">MY<span>PROFILE</span></div>
+
+```
+<nav>
+    <a href="#about">About</a>
+    <a href="#skills">Skills</a>
+    <a href="#projects">Projects</a>
+    <a href="#contact">Contact</a>
+</nav>
+```
+
+</header>
+
+<main>
+
+<section class="hero">
+    <div class="hero-content">
+
+```
+    <p class="eyebrow">DEVOPS • CLOUD • AUTOMATION</p>
+
+    <h1>{{ profile.name }}</h1>
+
+    <h2>{{ profile.title }}</h2>
+
+    <p class="lead">
+        {{ profile.summary }}
+    </p>
+
+    <div class="actions">
+        <a class="btn primary" href="#projects">
+            View Projects
+        </a>
+
+        <a class="btn secondary" href="#contact">
+            Contact Me
+        </a>
+    </div>
+
+</div>
+
+<div class="terminal">
+
+    <div class="terminal-top">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <pre><code>$ whoami
+```
+
+ashanur@devops:~$ docker ps
+CONTAINER   STATUS
+myprofile   running
+
+$ kubectl get pods
+myprofile   3/3   Running
+
+$ echo "CI/CD"
+Git → GitHub → Actions → Docker → Docker Hub</code></pre>
+
+```
+</div>
+```
+
+</section>
+
+<section id="about" class="section">
+
+```
+<p class="eyebrow">ABOUT</p>
+
+<h2>
+    Building reliable infrastructure and automation
+</h2>
+
+<p>
+    {{ profile.summary }}
+</p>
+```
+
+</section>
+
+<section id="skills" class="section">
+
+```
+<p class="eyebrow">TECHNICAL SKILLS</p>
+
+<div class="grid skills">
+
+    {% for skill in skills %}
+
+    <article class="card">
+
+        <h3>
+            {{ skill.category }}
+        </h3>
+
+        <p>
+            {{ skill.items }}
+        </p>
+
+    </article>
+
+    {% endfor %}
+
+</div>
+```
+
+</section>
+
+<section id="projects" class="section">
+
+```
+<p class="eyebrow">PROJECTS</p>
+
+<div class="grid projects">
+
+    {% for project in projects %}
+
+    <article class="card project">
+
+        <div class="project-number">
+            0{{ loop.index }}
+        </div>
+
+        <h3>
+            {{ project.name }}
+        </h3>
+
+        <p>
+            {{ project.description }}
+        </p>
+
+        <small>
+            {{ project.stack }}
+        </small>
+
+    </article>
+
+    {% endfor %}
+
+</div>
+```
+
+</section>
+
+<section class="pipeline section">
+
+```
+<p class="eyebrow">DEVOPS PIPELINE</p>
+
+<div class="pipeline-flow">
+
+    <div>
+        CODE<br>
+        <b>Git</b>
+    </div>
+
+    <span>→</span>
+
+    <div>
+        REPO<br>
+        <b>GitHub</b>
+    </div>
+
+    <span>→</span>
+
+    <div>
+        CI/CD<br>
+        <b>Actions</b>
+    </div>
+
+    <span>→</span>
+
+    <div>
+        IMAGE<br>
+        <b>Docker</b>
+    </div>
+
+    <span>→</span>
+
+    <div>
+        REGISTRY<br>
+        <b>Docker Hub</b>
+    </div>
+
+</div>
+```
+
+</section>
+
+<section id="contact" class="section contact">
+
+```
+<p class="eyebrow">CONTACT</p>
+
+<h2>
+    Let's build something reliable.
+</h2>
+
+<p>
+    Location: {{ profile.location }}
+</p>
+
+<div class="actions">
+
+    <a class="btn primary"
+       href="mailto:{{ profile.email }}">
+        Email Me
+    </a>
+
+    <a class="btn secondary"
+       href="{{ profile.github }}"
+       target="_blank">
+        GitHub
+    </a>
+
+    <a class="btn secondary"
+       href="{{ profile.linkedin }}"
+       target="_blank">
+        LinkedIn
+    </a>
+
+</div>
+```
+
+</section>
+
+</main>
+
+<footer>
+
+```
+<p>
+    © 2026 {{ profile.name }}
+    • Built with Python Flask
+    • Containerized with Docker
+</p>
+```
+
+</footer>
+
+</body>
+</html>
