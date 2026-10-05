@@ -7,48 +7,160 @@ on:
     branches: ["main"]
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/myprofile
+  APP_IMAGE: myprofile
 
 jobs:
-  test:
+  build-test-push:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+
+      # --------------------------------------------------
+      # 1. Checkout source code
+      # --------------------------------------------------
+      - name: Checkout source code
         uses: actions/checkout@v4
 
+
+      # --------------------------------------------------
+      # 2. Setup Python
+      # --------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
 
-      - name: Validate Flask app
-        run: python -m py_compile app.py
+      # --------------------------------------------------
+      # 3. Install dependencies
+      # --------------------------------------------------
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
+
+      # --------------------------------------------------
+      # 4. Validate Python application
+      # --------------------------------------------------
+      - name: Validate Python application
+        run: |
+          python -m py_compile app.py
+          python -c "from app import app; print('Flask application import: OK')"
+
+
+      # --------------------------------------------------
+      # 5. Build Docker image
+      # --------------------------------------------------
       - name: Build Docker image
-        run: docker build -t myprofile:test .
+        run: |
+          docker build \
+            -t $APP_IMAGE:latest \
+            -t $APP_IMAGE:${{ github.sha }} \
+            .
 
-  docker:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # 6. Start container
+      # --------------------------------------------------
+      - name: Start MyProfile container
+        run: |
+          docker run -d \
+            --name myprofile-test \
+            -p 5000:5000 \
+            $APP_IMAGE:latest
+
+
+      # --------------------------------------------------
+      # 7. Wait for application
+      # --------------------------------------------------
+      - name: Wait for application
+        shell: bash
+        run: |
+          set -e
+
+          for i in {1..30}; do
+
+            if curl --fail --silent http://127.0.0.1:5000/health; then
+              echo
+              echo "Health check: OK"
+              exit 0
+            fi
+
+            echo "Waiting for application... attempt $i/30"
+
+            sleep 2
+
+          done
+
+          echo "Application failed to start."
+
+          docker logs myprofile-test
+
+          exit 1
+
+
+      # --------------------------------------------------
+      # 8. Test home page
+      # --------------------------------------------------
+      - name: Test MyProfile home page
+        run: |
+          curl --fail --silent http://127.0.0.1:5000/ > /dev/null
+          echo "Home page test: OK"
+
+
+      # --------------------------------------------------
+      # 9. Display container logs
+      # --------------------------------------------------
+      - name: Show container logs
+        if: always()
+        run: |
+          docker logs myprofile-test
+
+
+      # --------------------------------------------------
+      # 10. Remove test container
+      # --------------------------------------------------
+      - name: Remove test container
+        if: always()
+        run: |
+          docker rm -f myprofile-test
+
+
+      # --------------------------------------------------
+      # 11. Login to Docker Hub
+      # --------------------------------------------------
       - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:latest
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      # --------------------------------------------------
+      # 12. Tag tested image for Docker Hub
+      # --------------------------------------------------
+      - name: Tag Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag \
+            $APP_IMAGE:latest \
+            ${{ secrets.DOCKERHUB_USERNAME }}/myprofile:latest
+
+          docker tag \
+            $APP_IMAGE:${{ github.sha }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/myprofile:${{ github.sha }}
+
+
+      # --------------------------------------------------
+      # 13. Push tested image
+      # --------------------------------------------------
+      - name: Push Docker image to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/myprofile:latest
+
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/myprofile:${{ github.sha }}
